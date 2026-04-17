@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Mix Sul Outlet — Cadastro</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/zxing-js/0.20.0/zxing.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@600;700;800&display=swap');
+
+  :root {
+    --bg: #0f0f0f;
+    --surface: #1a1a1a;
+    --border: #2a2a2a;
+    --accent: #D90704;
+    --text: #f0f0f0;
+    --muted: #666;
+    --green: #2ecc71;
+    --yellow: #f39c12;
+    --red: #e74c3c;
+    --radius: 12px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh;
+  }
+
+  #tela-login {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: radial-gradient(ellipse at 30% 20%, #2a0000 0%, #0f0f0f 60%);
+  }
+
+  .login-card {
+    width: 100%;
+    max-width: 380px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 40px 32px;
+  }
+
+  .login-logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 28px;
+    color: var(--accent);
+    margin-bottom: 4px;
+  }
+
+  .login-sub {
+    color: var(--muted);
+    font-size: 11px;
+    margin-bottom: 36px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  .field-group { margin-bottom: 16px; }
+
+  .field-label {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+    display: block;
+  }
+
+  input, select {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 14px;
+    padding: 12px 16px;
+    outline: none;
+    transition: border-color 0.2s;
+    -webkit-appearance: none;
+  }
+
+  input:focus, select:focus { border-color: var(--accent); }
+  select option { background: var(--surface); }
+
+  .btn {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: var(--radius);
+    font-family: 'Syne', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-primary { background: var(--accent); color: #ffffff; }
+  .btn-primary:hover:not(:disabled) { background: #b80603; }
+  .btn-primary:disabled { background: var(--border); color: var(--muted); cursor: not-allowed; }
+  .btn-secondary { background: transparent; color: var(--text); border: 1px solid var(--border); }
+  .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+
+  #tela-principal { display: none; }
+
+  .header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .header-logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 18px; color: var(--accent); }
+
+  .user-badge {
+    border-radius: 20px;
+    padding: 4px 10px;
+    font-size: 11px;
+    border: 1px solid var(--muted);
+    color: var(--muted);
+  }
+
+  .badge-supervisor { border-color: var(--accent) !important; color: var(--accent) !important; }
+
+  .main { max-width: 600px; margin: 0 auto; padding: 16px; }
+
+  .section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 18px;
+    margin-bottom: 14px;
+  }
+
+  .section-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+
+  .scanner-area {
+    background: var(--bg);
+    border-radius: var(--radius);
+    overflow: hidden;
+    aspect-ratio: 4/3;
+    max-height: 220px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px dashed var(--border);
+    margin-bottom: 10px;
+    position: relative;
+  }
+
+  #video { width: 100%; height: 100%; object-fit: cover; display: none; }
+
+  .scan-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .scan-frame {
+    width: 65%;
+    height: 55%;
+    border: 2px solid var(--accent);
+    border-radius: 8px;
+    box-shadow: 0 0 0 9999px rgba(0,0,0,0.45);
+    display: none;
+  }
+
+  .scan-placeholder { text-align: center; color: var(--muted); font-size: 13px; }
+  .scan-placeholder .icon { font-size: 30px; margin-bottom: 6px; }
+
+  .scanner-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+  .codigo-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg);
+    border: 1px solid var(--accent);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 13px;
+    color: var(--accent);
+    margin-top: 10px;
+  }
+
+  .fields-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .fields-grid .full { grid-column: 1 / -1; }
+
+  .margem-box {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    margin-bottom: 10px;
+    transition: all 0.3s;
+  }
+
+  .margem-box.verde { border-color: var(--green); background: rgba(71,255,138,0.04); }
+  .margem-box.amarelo { border-color: var(--yellow); background: rgba(255,212,71,0.04); }
+  .margem-box.vermelho { border-color: var(--red); background: rgba(255,71,71,0.04); }
+
+  .margem-num { font-family: 'Syne', sans-serif; font-size: 26px; font-weight: 800; }
+  .margem-lbl { font-size: 10px; color: var(--muted); letter-spacing: 1px; }
+
+  .margem-tag {
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 20px;
+  }
+
+  .verde .margem-tag { background: rgba(71,255,138,0.15); color: var(--green); }
+  .amarelo .margem-tag { background: rgba(255,212,71,0.15); color: var(--yellow); }
+  .vermelho .margem-tag { background: rgba(255,71,71,0.15); color: var(--red); }
+
+  .sup-block {
+    background: rgba(255,71,71,0.04);
+    border: 1px solid var(--red);
+    border-radius: var(--radius);
+    padding: 14px;
+    margin-bottom: 10px;
+    display: none;
+  }
+
+  .sup-block.show { display: block; }
+  .sup-alert { color: var(--red); font-size: 13px; font-weight: 500; margin-bottom: 12px; }
+
+  .precos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; margin-bottom: 10px; }
+
+  .preco-item {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 12px;
+  }
+
+  .preco-loja { color: var(--muted); font-size: 10px; margin-bottom: 2px; }
+  .preco-valor { color: var(--accent); font-weight: 500; }
+
+  .loading { display: none; align-items: center; gap: 8px; color: var(--muted); font-size: 12px; padding: 6px 0; }
+  .loading.show { display: flex; }
+
+  .spinner {
+    width: 14px; height: 14px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    flex-shrink: 0;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .hist-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+  }
+
+  .hist-item:last-child { border-bottom: none; }
+  .hist-cod { color: var(--accent); font-size: 11px; }
+  .hist-preco { color: var(--muted); }
+
+  .toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    padding: 10px 22px;
+    font-size: 13px;
+    z-index: 9999;
+    transition: transform 0.3s;
+    white-space: nowrap;
+    max-width: 90vw;
+  }
+
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .toast.success { border-color: var(--green); color: var(--green); }
+  .toast.error { border-color: var(--red); color: var(--red); }
+  .toast.info { border-color: var(--accent); color: var(--accent); }
+
+  @media (max-width: 480px) {
+    .fields-grid { grid-template-columns: 1fr; }
+    .fields-grid .full { grid-column: 1; }
+  }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="tela-login">
+  <div class="login-card">
+    <div class="login-logo">Mix Sul Outlet</div>
+    <div class="login-sub">Sistema de Cadastro</div>
+
+    <div class="field-group">
+      <label class="field-label">E-mail</label>
+      <input type="email" id="login-email" placeholder="operador@mixsul.com.br">
+    </div>
+    <div class="field-group">
+      <label class="field-label">Senha</label>
+      <input type="password" id="login-senha" placeholder="••••••••">
+    </div>
+    <div id="login-erro" style="color:var(--red);font-size:12px;margin-bottom:12px;display:none;"></div>
+    <button class="btn btn-primary" id="btn-login" onclick="fazerLogin()">Entrar</button>
+  </div>
+</div>
+
+<!-- PRINCIPAL -->
+<div id="tela-principal">
+
+  <div class="header">
+    <div class="header-logo">Mix Sul Outlet</div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <span id="hdr-nome" style="font-size:11px;color:var(--muted);"></span>
+      <span class="user-badge" id="hdr-badge"></span>
+      <button onclick="fazerLogout()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:4px;">⏻</button>
+    </div>
+  </div>
+
+  <div class="main">
+
+    <!-- SCANNER -->
+    <div class="section">
+      <div class="section-title">📷 Código de Barras</div>
+      <div class="scanner-area">
+        <video id="video" playsinline></video>
+        <div class="scan-overlay">
+          <div class="scan-frame" id="scan-frame"></div>
+          <div class="scan-placeholder" id="scan-ph">
+            <div class="icon">📦</div>
+            <div>Clique em Escanear</div>
+          </div>
+        </div>
+      </div>
+      <div class="scanner-btns">
+        <button class="btn btn-secondary" id="btn-scan" onclick="toggleScanner()">📷 Escanear</button>
+        <button class="btn btn-secondary" onclick="semCodigo()">🏷️ Sem Código</button>
+      </div>
+      <div id="cod-badge" style="display:none;">
+        <div class="codigo-badge">
+          <span>🔖</span>
+          <span id="cod-val"></span>
+          <button onclick="limparCodigo()" style="background:none;border:none;color:var(--muted);cursor:pointer;">✕</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- DADOS -->
+    <div class="section">
+      <div class="section-title">📋 Dados do Produto</div>
+      <div class="fields-grid">
+        <div class="field-group full">
+          <label class="field-label">Nome *</label>
+          <input type="text" id="f-nome" placeholder="Ex: Furadeira de Impacto 650W">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Marca</label>
+          <input type="text" id="f-marca" placeholder="Ex: Black Decker">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Categoria *</label>
+          <select id="f-cat">
+            <option value="">Selecione...</option>
+            <option value="Vestuário">Vestuário</option>
+            <option value="Calçados">Calçados</option>
+            <option value="Linha Branca">Linha Branca</option>
+            <option value="Ferramentas">Ferramentas</option>
+            <option value="Utensílios Domésticos">Utensílios Domésticos</option>
+            <option value="Outros">Outros</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Nº do Lote</label>
+          <input type="text" id="f-lote" placeholder="Ex: K-2576">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Qtd no Lote *</label>
+          <input type="number" id="f-qtd" min="1" value="1" oninput="calcCusto()">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Custo Total (R$) *</label>
+          <input type="number" id="f-custo-lote" placeholder="0.00" step="0.01" readonly style="border-color:#333;color:var(--muted);cursor:default;">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Custo Unit. (R$)</label>
+          <input type="number" id="f-custo-unit" placeholder="0.00" step="0.01" oninput="calcCusto()">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Preço Venda (R$) *</label>
+          <input type="number" id="f-preco" placeholder="0.00" step="0.01" oninput="calcMargem()">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Qtd Etiquetas</label>
+          <input type="number" id="f-etq" min="1" value="1">
+        </div>
+      </div>
+    </div>
+
+    <!-- PREÇOS DE MERCADO -->
+    <div class="section" id="sec-precos" style="display:none;">
+      <div class="section-title">💰 Referência de Mercado</div>
+      <div class="loading show" id="load-precos"><div class="spinner"></div><span>Buscando preços...</span></div>
+      <div id="precos-res" style="display:none;">
+        <div class="precos-grid" id="precos-grid"></div>
+        <div style="display:flex;gap:16px;font-size:11px;color:var(--muted);flex-wrap:wrap;">
+          <span>Média: <strong id="p-media" style="color:var(--text);">—</strong></span>
+          <span>Sugerido: <strong id="p-sug" style="color:var(--accent);">—</strong></span>
+        </div>
+        <button class="btn btn-secondary" onclick="usarSugerido()" style="margin-top:10px;padding:8px;font-size:13px;">↑ Usar preço sugerido</button>
+      </div>
+    </div>
+
+    <!-- MARGEM -->
+    <div class="section">
+      <div class="section-title">📊 Margem</div>
+      <div class="margem-box" id="margem-box">
+        <div>
+          <div class="margem-lbl">MARGEM BRUTA</div>
+          <div class="margem-num" id="margem-num">—</div>
+        </div>
+        <div class="margem-tag" id="margem-tag">Aguardando</div>
+      </div>
+
+      <!-- SUPERVISOR -->
+      <div class="sup-block" id="sup-block">
+        <div class="sup-alert">⚠️ Margem abaixo de 30% — requer autorização do supervisor</div>
+        <div class="field-group">
+          <label class="field-label">E-mail do Supervisor</label>
+          <input type="email" id="sup-email" placeholder="supervisor@mixsul.com.br">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Senha do Supervisor</label>
+          <input type="password" id="sup-senha" placeholder="••••••••">
+        </div>
+        <button class="btn btn-secondary" onclick="autorizarMargem()" style="padding:10px;font-size:13px;">🔓 Autorizar</button>
+        <div id="sup-status" style="font-size:12px;margin-top:8px;"></div>
+      </div>
+    </div>
+
+    <!-- CADASTRAR -->
+    <button class="btn btn-primary" id="btn-cad" onclick="cadastrar()" disabled style="margin-bottom:12px;">
+      Cadastrar Produto
+    </button>
+    <div class="loading" id="load-cad"><div class="spinner"></div><span>Cadastrando...</span></div>
+
+    <!-- HISTÓRICO -->
+    <div class="section" id="sec-hist" style="display:none;">
+      <div class="section-title">✅ Cadastrados nesta sessão</div>
+      <div id="hist-lista"></div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SUPA_URL = 'https://gaehkgshveusnirskmwg.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdhZWhrZ3NodmV1c25pcnNrbXdnIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NjA1MDgxMiwiZXhwIjoyMDkxNjI2ODEyfQ.dI-QB4MFeGCHmCt2kW_mZUs6tQeaWWvFoELxDJA6SdM';
+const WF2 = 'https://edson1977.app.n8n.cloud/webhook/mixsul-precificacao';
+const WF3 = 'https://edson1977.app.n8n.cloud/webhook/mixsul-cadastro';
+
+let usuario = null, codigoAtual = null, tipoAtual = null;
+let scannerAtivo = false, codeReader = null;
+let margemAtual = 0, supAutorizado = false, precoSug = null;
+let historico = [];
+
+// LOGIN
+document.getElementById('login-senha').addEventListener('keydown', e => { if (e.key === 'Enter') fazerLogin(); });
+
+async function fazerLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const senha = document.getElementById('login-senha').value;
+  const erro = document.getElementById('login-erro');
+  const btn = document.getElementById('btn-login');
+
+  if (!email || !senha) { erro.textContent = 'Preencha e-mail e senha.'; erro.style.display = 'block'; return; }
+
+  btn.disabled = true; btn.textContent = 'Entrando...'; erro.style.display = 'none';
+
+  try {
+    const res = await fetch(`${SUPA_URL}/rest/v1/rpc/login_usuario`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}` },
+      body: JSON.stringify({ p_email: email, p_senha: senha })
+    });
+    const data = await res.json();
+
+    if (data && data.autorizado) {
+      usuario = data;
+      document.getElementById('tela-login').style.display = 'none';
+      document.getElementById('tela-principal').style.display = 'block';
+      document.getElementById('hdr-nome').textContent = data.nome;
+      const b = document.getElementById('hdr-badge');
+      b.textContent = data.perfil; b.className = `user-badge badge-${data.perfil}`;
+    } else {
+      erro.textContent = 'E-mail ou senha incorretos.'; erro.style.display = 'block';
+    }
+  } catch(e) { erro.textContent = 'Erro de conexão.'; erro.style.display = 'block'; }
+
+  btn.disabled = false; btn.textContent = 'Entrar';
+}
+
+function fazerLogout() {
+  usuario = null;
+  document.getElementById('tela-login').style.display = 'flex';
+  document.getElementById('tela-principal').style.display = 'none';
+  pararScanner(); limparForm();
+}
+
+// SCANNER
+async function toggleScanner() {
+  if (scannerAtivo) { pararScanner(); return; }
+  try {
+    codeReader = new ZXing.BrowserMultiFormatReader();
+    const vid = document.getElementById('video');
+    vid.style.display = 'block';
+    document.getElementById('scan-ph').style.display = 'none';
+    document.getElementById('scan-frame').style.display = 'block';
+    document.getElementById('btn-scan').textContent = '⏹ Parar';
+    scannerAtivo = true;
+
+    await codeReader.decodeFromVideoDevice(null, vid, (result) => {
+      if (result) {
+        pararScanner();
+        const cod = result.getText();
+        definirCodigo(cod, 'EAN');
+        buscarEAN(cod);
+      }
+    });
+  } catch(e) { showToast('Câmera não disponível', 'error'); }
+}
+
+function pararScanner() {
+  if (codeReader) { codeReader.reset(); codeReader = null; }
+  document.getElementById('video').style.display = 'none';
+  document.getElementById('scan-ph').style.display = 'block';
+  document.getElementById('scan-frame').style.display = 'none';
+  document.getElementById('btn-scan').textContent = '📷 Escanear';
+  scannerAtivo = false;
+}
+
+function semCodigo() {
+  definirCodigo(null, 'MSO');
+  showToast('Código MSO será gerado automaticamente', 'info');
+}
+
+function definirCodigo(cod, tipo) {
+  codigoAtual = cod; tipoAtual = tipo;
+  document.getElementById('cod-val').textContent = tipo === 'MSO' ? 'MSO-XXXXXX (automático)' : cod;
+  document.getElementById('cod-badge').style.display = 'block';
+  verificar();
+}
+
+function limparCodigo() {
+  codigoAtual = null; tipoAtual = null;
+  document.getElementById('cod-badge').style.display = 'none';
+  verificar();
+}
+
+// BUSCA EAN
+async function buscarEAN(ean) {
+  showToast('Buscando produto...', 'info');
+  try {
+    const res = await fetch('https://edson1977.app.n8n.cloud/webhook/mixsul-busca-ean', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ean })
+    });
+    const data = await res.json();
+    if (data && data.descricao) {
+      document.getElementById('f-nome').value = data.descricao || '';
+      document.getElementById('f-marca').value = data.marca || '';
+      showToast(`Encontrado: ${data.descricao}`, 'success');
+    }
+  } catch(e) {}
+}
+
+// PREÇOS
+async function buscarPrecos() {
+  const nome = document.getElementById('f-nome').value.trim();
+  const cat = document.getElementById('f-cat').value;
+  if (!nome || !cat) return;
+
+  document.getElementById('sec-precos').style.display = 'block';
+  document.getElementById('load-precos').classList.add('show');
+  document.getElementById('precos-res').style.display = 'none';
+
+  try {
+    const res = await fetch(WF2, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nome, categoria: cat })
+    });
+    const data = await res.json();
+    document.getElementById('load-precos').classList.remove('show');
+
+    if (data && data.precos && data.precos.length > 0) {
+      document.getElementById('precos-grid').innerHTML = data.precos.map(p =>
+        `<div class="preco-item"><div class="preco-loja">${p.loja}</div><div class="preco-valor">R$ ${p.preco.toFixed(2).replace('.', ',')}</div></div>`
+      ).join('');
+      document.getElementById('p-media').textContent = `R$ ${data.media.toFixed(2).replace('.', ',')}`;
+      document.getElementById('p-sug').textContent = `R$ ${data.preco_sugerido.toFixed(2).replace('.', ',')}`;
+      precoSug = data.preco_sugerido;
+      document.getElementById('precos-res').style.display = 'block';
+    } else {
+      document.getElementById('sec-precos').style.display = 'none';
+    }
+  } catch(e) { document.getElementById('load-precos').classList.remove('show'); }
+}
+
+function usarSugerido() {
+  if (precoSug) { document.getElementById('f-preco').value = precoSug.toFixed(2); calcMargem(); }
+}
+
+// CÁLCULOS
+function calcCusto() {
+  const qtd = parseInt(document.getElementById('f-qtd').value) || 1;
+  const unit = parseFloat(document.getElementById('f-custo-unit').value) || 0;
+  // Custo Total = Qtd x Custo Unitário (somente leitura)
+  document.getElementById('f-custo-lote').value = (qtd * unit).toFixed(2);
+  calcMargem();
+}
+
+function calcMargem() {
+  const custo = parseFloat(document.getElementById('f-custo-unit').value) || 0;
+  const preco = parseFloat(document.getElementById('f-preco').value) || 0;
+  const box = document.getElementById('margem-box');
+  const num = document.getElementById('margem-num');
+  const tag = document.getElementById('margem-tag');
+  const sup = document.getElementById('sup-block');
+
+  if (!custo || !preco) {
+    num.textContent = '—'; box.className = 'margem-box'; tag.textContent = 'Aguardando';
+    sup.classList.remove('show'); verificar(); return;
+  }
+
+  margemAtual = ((preco - custo) / preco) * 100;
+  num.textContent = `${margemAtual.toFixed(1)}%`;
+  box.className = 'margem-box';
+  supAutorizado = false;
+
+  if (margemAtual >= 40) {
+    box.classList.add('verde'); tag.textContent = '✓ Boa margem'; sup.classList.remove('show');
+  } else if (margemAtual >= 30) {
+    box.classList.add('amarelo'); tag.textContent = '⚠ Margem mínima'; sup.classList.remove('show');
+  } else {
+    box.classList.add('vermelho'); tag.textContent = '✕ Abaixo do mínimo'; sup.classList.add('show');
+  }
+  verificar();
+}
+
+// AUTORIZAÇÃO SUPERVISOR
+async function autorizarMargem() {
+  const email = document.getElementById('sup-email').value.trim();
+  const senha = document.getElementById('sup-senha').value;
+  const status = document.getElementById('sup-status');
+
+  if (!email || !senha) { status.style.color = 'var(--red)'; status.textContent = 'Preencha as credenciais.'; return; }
+
+  status.style.color = 'var(--muted)'; status.textContent = 'Verificando...';
+
+  try {
+    const res = await fetch(`${SUPA_URL}/rest/v1/rpc/autorizar_margem`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}` },
+      body: JSON.stringify({ p_email: email, p_senha: senha })
+    });
+    const data = await res.json();
+
+    if (data && data.autorizado) {
+      supAutorizado = true;
+      status.style.color = 'var(--green)';
+      status.textContent = `✓ Autorizado por ${data.supervisor_nome}`;
+      showToast('Margem autorizada!', 'success');
+      verificar();
+    } else {
+      supAutorizado = false;
+      status.style.color = 'var(--red)';
+      status.textContent = '✕ Credenciais inválidas ou sem permissão.';
+    }
+  } catch(e) { status.style.color = 'var(--red)'; status.textContent = 'Erro de conexão.'; }
+}
+
+// VERIFICAR BOTÃO
+function verificar() {
+  const nome = document.getElementById('f-nome').value.trim();
+  const cat = document.getElementById('f-cat').value;
+  const custo = parseFloat(document.getElementById('f-custo-unit').value) || 0;
+  const preco = parseFloat(document.getElementById('f-preco').value) || 0;
+  const ok = nome && cat && custo > 0 && preco > 0 && tipoAtual !== null && (margemAtual >= 30 || supAutorizado);
+  document.getElementById('btn-cad').disabled = !ok;
+}
+
+['f-nome', 'f-cat', 'f-custo-unit', 'f-preco'].forEach(id => {
+  const el = document.getElementById(id);
+  el.addEventListener('input', verificar);
+  el.addEventListener('change', verificar);
+});
+
+document.getElementById('f-nome').addEventListener('blur', () => {
+  if (document.getElementById('f-cat').value) buscarPrecos();
+});
+
+document.getElementById('f-cat').addEventListener('change', () => {
+  if (document.getElementById('f-nome').value.trim()) buscarPrecos();
+});
+
+// CADASTRAR
+async function cadastrar() {
+  const btn = document.getElementById('btn-cad');
+  const load = document.getElementById('load-cad');
+
+  const payload = {
+    ean:            tipoAtual === 'EAN' ? codigoAtual : null,
+    nome:           document.getElementById('f-nome').value.trim(),
+    marca:          document.getElementById('f-marca').value.trim(),
+    categoria:      document.getElementById('f-cat').value,
+    custo_lote:     parseFloat(document.getElementById('f-custo-lote').value) || 0,
+    qtd_lote:       parseInt(document.getElementById('f-qtd').value) || 1,
+    custo_unitario: parseFloat(document.getElementById('f-custo-unit').value),
+    preco_venda:    parseFloat(document.getElementById('f-preco').value),
+    margem_pct:     parseFloat(margemAtual.toFixed(2)),
+    preco_ajustado: margemAtual < 30 && supAutorizado,
+    lote_ref:       document.getElementById('f-lote').value.trim(),
+    qtd_etiquetas:  parseInt(document.getElementById('f-etq').value) || 1,
+    operador:       usuario.nome,
+    operador_id:    usuario.id
+  };
+
+  btn.disabled = true; load.classList.add('show');
+
+  try {
+    const res = await fetch(WF3, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    load.classList.remove('show');
+
+    if (data && data.sucesso) {
+      showToast(`✓ ${data.codigo} cadastrado com sucesso!`, 'success');
+      historico.unshift(data);
+      document.getElementById('sec-hist').style.display = 'block';
+      document.getElementById('hist-lista').innerHTML = historico.slice(0, 10).map(h =>
+        `<div class="hist-item">
+          <div><div class="hist-cod">${h.codigo}</div><div style="font-size:13px;">${h.nome}</div></div>
+          <div class="hist-preco">R$ ${h.preco_venda.toFixed(2).replace('.', ',')}</div>
+        </div>`
+      ).join('');
+      limparForm();
+    } else {
+      showToast('Erro ao cadastrar. Tente novamente.', 'error');
+      btn.disabled = false;
+    }
+  } catch(e) {
+    load.classList.remove('show');
+    showToast('Erro de conexão.', 'error');
+    btn.disabled = false;
+  }
+}
+
+function limparForm() {
+  codigoAtual = null; tipoAtual = null; supAutorizado = false; margemAtual = 0; precoSug = null;
+  ['f-nome','f-marca','f-custo-lote','f-custo-unit','f-preco'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+  document.getElementById('f-cat').value = '';
+  document.getElementById('f-qtd').value = '1';
+  document.getElementById('f-etq').value = '1';
+  document.getElementById('cod-badge').style.display = 'none';
+  document.getElementById('sup-block').classList.remove('show');
+  document.getElementById('sup-email').value = '';
+  document.getElementById('sup-senha').value = '';
+  document.getElementById('sup-status').textContent = '';
+  document.getElementById('sec-precos').style.display = 'none';
+  document.getElementById('margem-box').className = 'margem-box';
+  document.getElementById('margem-num').textContent = '—';
+  document.getElementById('margem-tag').textContent = 'Aguardando';
+  document.getElementById('btn-cad').disabled = true;
+}
+
+// TOAST
+let toastTimer;
+function showToast(msg, tipo = 'info') {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.className = `toast ${tipo} show`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 3000);
+}
+</script>
+</body>
+</html>
