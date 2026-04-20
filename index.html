@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Mix Sul Outlet — Cadastro</title>
-<script src="https://unpkg.com/@zxing/library@0.19.1/umd/index.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@600;700;800&display=swap');
 
@@ -355,17 +355,8 @@
     <!-- SCANNER -->
     <div class="section">
       <div class="section-title">📷 Código de Barras</div>
-      <div class="scanner-area">
-        <video id="video" playsinline></video>
-        <div class="scan-overlay">
-          <div class="scan-frame" id="scan-frame"></div>
-          <div class="scan-placeholder" id="scan-ph">
-            <div class="icon">📦</div>
-            <div>Clique em Escanear</div>
-          </div>
-        </div>
-      </div>
-      <div class="scanner-btns">
+      <div id="qr-reader" style="width:100%;border-radius:12px;overflow:hidden;"></div>
+      <div class="scanner-btns" style="margin-top:10px;">
         <button class="btn btn-secondary" id="btn-scan" onclick="toggleScanner()">📷 Escanear</button>
         <button class="btn btn-secondary" onclick="semCodigo()">🏷️ Sem Código</button>
       </div>
@@ -494,7 +485,7 @@ const WF2 = 'https://edson1977.app.n8n.cloud/webhook/mixsul-precificacao';
 const WF3 = 'https://edson1977.app.n8n.cloud/webhook/mixsul-cadastro';
 
 let usuario = null, codigoAtual = null, tipoAtual = null;
-let scannerAtivo = false, codeReader = null;
+let scannerAtivo = false, html5QrCode = null;
 let margemAtual = 0, supAutorizado = false, precoSug = null;
 let historico = [];
 
@@ -545,48 +536,31 @@ function fazerLogout() {
 async function toggleScanner() {
   if (scannerAtivo) { pararScanner(); return; }
   try {
-    codeReader = new ZXing.BrowserMultiFormatReader();
-    const devices = await ZXing.BrowserMultiFormatReader.listVideoInputDevices();
-    // Prefere câmera traseira
-    const device = devices.find(d => d.label.toLowerCase().includes('back') || 
-                                      d.label.toLowerCase().includes('tras') ||
-                                      d.label.toLowerCase().includes('rear')) || devices[devices.length - 1];
-    const deviceId = device ? device.deviceId : undefined;
-
-    const vid = document.getElementById('video');
-    vid.style.display = 'block';
-    document.getElementById('scan-ph').style.display = 'none';
-    document.getElementById('scan-frame').style.display = 'block';
+    html5QrCode = new Html5Qrcode("qr-reader");
+    await html5QrCode.start(
+      { facingMode: "environment" },
+      { fps: 10, qrbox: { width: 250, height: 150 } },
+      (decodedText) => {
+        pararScanner();
+        definirCodigo(decodedText, 'EAN');
+        buscarEAN(decodedText);
+      }
+    );
     document.getElementById('btn-scan').textContent = '⏹ Parar';
     scannerAtivo = true;
-
-    await codeReader.decodeFromVideoDevice(deviceId, vid, (result, err) => {
-      if (result) {
-        pararScanner();
-        const cod = result.getText();
-        definirCodigo(cod, 'EAN');
-        buscarEAN(cod);
-      }
-    });
   } catch(e) {
     scannerAtivo = false;
-    showToast('Erro ao acessar câmera: ' + e.message, 'error');
+    showToast('Erro ao acessar câmera', 'error');
   }
 }
 
 function pararScanner() {
-  if (codeReader) { 
-    try { codeReader.reset(); } catch(e) {}
-    codeReader = null; 
+  if (html5QrCode) {
+    html5QrCode.stop().then(() => {
+      html5QrCode.clear();
+      html5QrCode = null;
+    }).catch(() => {});
   }
-  const vid = document.getElementById('video');
-  if (vid.srcObject) {
-    vid.srcObject.getTracks().forEach(t => t.stop());
-    vid.srcObject = null;
-  }
-  vid.style.display = 'none';
-  document.getElementById('scan-ph').style.display = 'block';
-  document.getElementById('scan-frame').style.display = 'none';
   document.getElementById('btn-scan').textContent = '📷 Escanear';
   scannerAtivo = false;
 }
