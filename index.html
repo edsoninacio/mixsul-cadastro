@@ -462,8 +462,11 @@
     </div>
 
     <!-- CADASTRAR -->
-    <button class="btn btn-primary" id="btn-cad" onclick="cadastrar()" disabled style="margin-bottom:12px;">
+    <button class="btn btn-primary" id="btn-cad" onclick="cadastrar()" disabled style="margin-bottom:10px;">
       Cadastrar Produto
+    </button>
+    <button class="btn btn-secondary" onclick="limparForm()" style="margin-bottom:12px;">
+      🗑️ Limpar Formulário
     </button>
     <div class="loading" id="load-cad"><div class="spinner"></div><span>Cadastrando...</span></div>
 
@@ -489,6 +492,21 @@ let scannerAtivo = false, html5QrCode = null;
 let margemAtual = 0, supAutorizado = false, precoSug = null;
 let historico = [];
 
+// RESTAURA SESSÃO
+(function() {
+  const saved = sessionStorage.getItem('mixsul_user');
+  if (saved) {
+    try {
+      usuario = JSON.parse(saved);
+      document.getElementById('tela-login').style.display = 'none';
+      document.getElementById('tela-principal').style.display = 'block';
+      document.getElementById('hdr-nome').textContent = usuario.nome;
+      const b = document.getElementById('hdr-badge');
+      b.textContent = usuario.perfil; b.className = 'user-badge badge-' + usuario.perfil;
+    } catch(e) { sessionStorage.removeItem('mixsul_user'); }
+  }
+})();
+
 // LOGIN
 document.getElementById('login-senha').addEventListener('keydown', e => { if (e.key === 'Enter') fazerLogin(); });
 
@@ -512,6 +530,7 @@ async function fazerLogin() {
 
     if (data && data.autorizado) {
       usuario = data;
+      sessionStorage.setItem('mixsul_user', JSON.stringify(data));
       document.getElementById('tela-login').style.display = 'none';
       document.getElementById('tela-principal').style.display = 'block';
       document.getElementById('hdr-nome').textContent = data.nome;
@@ -527,6 +546,7 @@ async function fazerLogin() {
 
 function fazerLogout() {
   usuario = null;
+  sessionStorage.removeItem('mixsul_user');
   document.getElementById('tela-login').style.display = 'flex';
   document.getElementById('tela-principal').style.display = 'none';
   pararScanner(); limparForm();
