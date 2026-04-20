@@ -811,6 +811,7 @@ function limparForm() {
   codigoAtual = null; tipoAtual = null; supAutorizado = false; margemAtual = 0; precoSug = null;
   ['f-nome','f-marca','f-custo-lote','f-custo-unit','f-preco'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
   document.getElementById('f-cat').value = '';
+  document.getElementById('f-lote').value = '';
   document.getElementById('f-qtd').value = '1';
   document.getElementById('f-etq').value = '1';
   document.getElementById('cod-badge').style.display = 'none';
