@@ -593,10 +593,11 @@ async function buscarEAN(ean) {
       body: JSON.stringify({ ean })
     });
     const data = await res.json();
-    if (data && data.descricao) {
-      document.getElementById('f-nome').value = data.descricao || '';
+    if (data && data.encontrado) {
+      document.getElementById('f-nome').value = data.nome || '';
       document.getElementById('f-marca').value = data.marca || '';
-      showToast(`Encontrado: ${data.descricao}`, 'success');
+      if (data.ncm) document.getElementById('f-custo-unit').setAttribute('data-ncm', data.ncm);
+      showToast(`Encontrado: ${data.nome}`, 'success');
     }
   } catch(e) {}
 }
