@@ -360,7 +360,13 @@
         <button class="btn btn-secondary" id="btn-scan" onclick="toggleScanner()">📷 Escanear</button>
         <button class="btn btn-secondary" onclick="semCodigo()">🏷️ Sem Código</button>
       </div>
-      <div id="cod-badge" style="display:none;">
+      <div style="margin-top:10px;display:flex;gap:8px;">
+        <input type="text" id="f-cod-manual" placeholder="Digite o código de barras..." style="flex:1;" 
+               onkeydown="if(event.key==='Enter') buscarCodigoManual()">
+        <button onclick="buscarCodigoManual()" class="btn btn-secondary" style="width:auto;padding:12px 16px;white-space:nowrap;">🔍 Buscar</button>
+      </div>
+
+      <div id="cod-badge" style="display:none;margin-top:10px;">
         <div class="codigo-badge">
           <span>🔖</span>
           <span id="cod-val"></span>
@@ -375,7 +381,10 @@
       <div class="fields-grid">
         <div class="field-group full">
           <label class="field-label">Nome *</label>
-          <input type="text" id="f-nome" placeholder="Ex: Furadeira de Impacto 650W">
+          <div style="display:flex;gap:8px;">
+            <input type="text" id="f-nome" placeholder="Ex: Fogão Electrolux 5 bocas blue touch" style="flex:1;">
+            <button onclick="buscarPrecos()" class="btn btn-secondary" style="width:auto;padding:12px 14px;white-space:nowrap;" title="Buscar preços">💰</button>
+          </div>
         </div>
         <div class="field-group">
           <label class="field-label">Marca</label>
@@ -603,6 +612,15 @@ function limparCodigo() {
   verificar();
 }
 
+// BUSCA MANUAL DE CÓDIGO
+function buscarCodigoManual() {
+  const cod = document.getElementById('f-cod-manual').value.trim();
+  if (!cod) { showToast('Digite um código', 'error'); return; }
+  definirCodigo(cod, 'EAN');
+  buscarEAN(cod);
+  document.getElementById('f-cod-manual').value = '';
+}
+
 // BUSCA EAN
 async function buscarEAN(ean) {
   showToast('Buscando produto...', 'info');
@@ -752,6 +770,11 @@ document.getElementById('f-cat').addEventListener('change', () => {
   if (document.getElementById('f-nome').value.trim()) buscarPrecos();
 });
 
+// Enter no campo nome também busca preços
+document.getElementById('f-nome').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && document.getElementById('f-cat').value) buscarPrecos();
+});
+
 // CADASTRAR
 async function cadastrar() {
   const btn = document.getElementById('btn-cad');
@@ -809,7 +832,7 @@ async function cadastrar() {
 
 function limparForm() {
   codigoAtual = null; tipoAtual = null; supAutorizado = false; margemAtual = 0; precoSug = null;
-  ['f-nome','f-marca','f-custo-lote','f-custo-unit','f-preco'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+  ['f-nome','f-marca','f-custo-lote','f-custo-unit','f-preco','f-cod-manual'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
   document.getElementById('f-cat').value = '';
   document.getElementById('f-lote').value = '';
   document.getElementById('f-qtd').value = '1';
