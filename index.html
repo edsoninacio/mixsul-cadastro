@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Mix Sul Outlet — Cadastro</title>
-<script src="https://unpkg.com/@zxing/library@latest/umd/index.min.js"></script>
+<script src="https://unpkg.com/@zxing/library@0.19.1/umd/index.min.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@600;700;800&display=swap');
 
@@ -545,20 +545,22 @@ function fazerLogout() {
 async function toggleScanner() {
   if (scannerAtivo) { pararScanner(); return; }
   try {
+    codeReader = new ZXing.BrowserMultiFormatReader();
+    const devices = await ZXing.BrowserMultiFormatReader.listVideoInputDevices();
+    // Prefere câmera traseira
+    const device = devices.find(d => d.label.toLowerCase().includes('back') || 
+                                      d.label.toLowerCase().includes('tras') ||
+                                      d.label.toLowerCase().includes('rear')) || devices[devices.length - 1];
+    const deviceId = device ? device.deviceId : undefined;
+
     const vid = document.getElementById('video');
-    const stream = await navigator.mediaDevices.getUserMedia({ 
-      video: { facingMode: 'environment' } 
-    });
-    vid.srcObject = stream;
-    vid.play();
     vid.style.display = 'block';
     document.getElementById('scan-ph').style.display = 'none';
     document.getElementById('scan-frame').style.display = 'block';
     document.getElementById('btn-scan').textContent = '⏹ Parar';
     scannerAtivo = true;
 
-    codeReader = new ZXing.BrowserMultiFormatReader();
-    codeReader.decodeFromVideoElement(vid, (result, err) => {
+    await codeReader.decodeFromVideoDevice(deviceId, vid, (result, err) => {
       if (result) {
         pararScanner();
         const cod = result.getText();
@@ -566,13 +568,17 @@ async function toggleScanner() {
         buscarEAN(cod);
       }
     });
-  } catch(e) { 
-    showToast('Permita o acesso à câmera nas configurações', 'error');
+  } catch(e) {
+    scannerAtivo = false;
+    showToast('Erro ao acessar câmera: ' + e.message, 'error');
   }
 }
 
 function pararScanner() {
-  if (codeReader) { codeReader.reset(); codeReader = null; }
+  if (codeReader) { 
+    try { codeReader.reset(); } catch(e) {}
+    codeReader = null; 
+  }
   const vid = document.getElementById('video');
   if (vid.srcObject) {
     vid.srcObject.getTracks().forEach(t => t.stop());
