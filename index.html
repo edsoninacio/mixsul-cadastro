@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Mix Sul Outlet — Cadastro</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/zxing-js/0.20.0/zxing.min.js"></script>
+<script src="https://unpkg.com/@zxing/library@latest/umd/index.min.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@600;700;800&display=swap');
 
@@ -545,15 +545,20 @@ function fazerLogout() {
 async function toggleScanner() {
   if (scannerAtivo) { pararScanner(); return; }
   try {
-    codeReader = new ZXing.BrowserMultiFormatReader();
     const vid = document.getElementById('video');
+    const stream = await navigator.mediaDevices.getUserMedia({ 
+      video: { facingMode: 'environment' } 
+    });
+    vid.srcObject = stream;
+    vid.play();
     vid.style.display = 'block';
     document.getElementById('scan-ph').style.display = 'none';
     document.getElementById('scan-frame').style.display = 'block';
     document.getElementById('btn-scan').textContent = '⏹ Parar';
     scannerAtivo = true;
 
-    await codeReader.decodeFromVideoDevice(null, vid, (result) => {
+    codeReader = new ZXing.BrowserMultiFormatReader();
+    codeReader.decodeFromVideoElement(vid, (result, err) => {
       if (result) {
         pararScanner();
         const cod = result.getText();
@@ -561,12 +566,19 @@ async function toggleScanner() {
         buscarEAN(cod);
       }
     });
-  } catch(e) { showToast('Câmera não disponível', 'error'); }
+  } catch(e) { 
+    showToast('Permita o acesso à câmera nas configurações', 'error');
+  }
 }
 
 function pararScanner() {
   if (codeReader) { codeReader.reset(); codeReader = null; }
-  document.getElementById('video').style.display = 'none';
+  const vid = document.getElementById('video');
+  if (vid.srcObject) {
+    vid.srcObject.getTracks().forEach(t => t.stop());
+    vid.srcObject = null;
+  }
+  vid.style.display = 'none';
   document.getElementById('scan-ph').style.display = 'block';
   document.getElementById('scan-frame').style.display = 'none';
   document.getElementById('btn-scan').textContent = '📷 Escanear';
