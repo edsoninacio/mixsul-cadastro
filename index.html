@@ -135,6 +135,37 @@
   }
 
   .badge-supervisor { border-color: var(--accent) !important; color: var(--accent) !important; }
+  .badge-master { border-color: #a855f7 !important; color: #a855f7 !important; }
+  .badge-usuario { border-color: var(--muted) !important; color: var(--muted) !important; }
+
+  /* MENU */
+  .menu-btn { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 20px; padding: 4px 8px; transition: color 0.2s; }
+  .menu-btn:hover { color: var(--text); }
+  .menu-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 200; }
+  .menu-overlay.show { display: block; }
+  .menu-drawer { position: fixed; top: 0; right: -280px; width: 280px; height: 100vh; background: var(--surface); border-left: 1px solid var(--border); z-index: 201; transition: right 0.3s; padding: 24px 20px; display: flex; flex-direction: column; gap: 8px; }
+  .menu-drawer.show { right: 0; }
+  .menu-header { font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+  .menu-item { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: var(--radius); cursor: pointer; font-size: 14px; color: var(--text); border: none; background: none; width: 100%; text-align: left; transition: background 0.2s; }
+  .menu-item:hover { background: var(--border); }
+  .menu-item.active { background: rgba(217,7,4,0.1); color: var(--accent); }
+  .menu-item.danger { color: var(--red); }
+  .menu-item.danger:hover { background: rgba(231,76,60,0.1); }
+
+  /* TELA USUARIOS */
+  #tela-usuarios { display: none; }
+  .usr-card { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; }
+  .usr-nome { font-size: 14px; font-weight: 500; margin-bottom: 2px; }
+  .usr-email { font-size: 11px; color: var(--muted); }
+  .usr-actions { display: flex; gap: 6px; }
+  .btn-icon { background: none; border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; cursor: pointer; color: var(--muted); font-size: 12px; transition: all 0.2s; }
+  .btn-icon:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-icon.danger:hover { border-color: var(--red); color: var(--red); }
+  .perfil-badge { font-size: 10px; padding: 2px 8px; border-radius: 20px; border: 1px solid; margin-top: 4px; display: inline-block; }
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 300; align-items: center; justify-content: center; padding: 20px; }
+  .modal-overlay.show { display: flex; }
+  .modal-inner { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 24px; width: 100%; max-width: 400px; }
+  .modal-title { font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; margin-bottom: 18px; letter-spacing: 1px; text-transform: uppercase; }
 
   .main { max-width: 600px; margin: 0 auto; padding: 16px; }
 
@@ -402,8 +433,18 @@
     <div style="display:flex;align-items:center;gap:8px;">
       <span id="hdr-nome" style="font-size:11px;color:var(--muted);"></span>
       <span class="user-badge" id="hdr-badge"></span>
-      <button onclick="fazerLogout()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:4px;">⏻</button>
+      <button class="menu-btn" onclick="abrirMenu()">☰</button>
     </div>
+  </div>
+
+  <!-- MENU DRAWER -->
+  <div class="menu-overlay" id="menu-overlay" onclick="fecharMenu()"></div>
+  <div class="menu-drawer" id="menu-drawer">
+    <div class="menu-header">Menu</div>
+    <button class="menu-item active" onclick="irParaCadastro()">📦 Cadastro de Produto</button>
+    <button class="menu-item" id="menu-usuarios" onclick="irParaUsuarios()" style="display:none;">👥 Gestão de Usuários</button>
+    <div style="flex:1;"></div>
+    <button class="menu-item danger" onclick="fazerLogout()">⏻ Sair</button>
   </div>
 
   <div class="main">
@@ -551,6 +592,60 @@
   </div>
 </div>
 
+<!-- TELA USUARIOS -->
+<div id="tela-usuarios">
+  <div class="header">
+    <div class="header-logo">Mix Sul Outlet</div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <span id="hdr-nome-usr" style="font-size:11px;color:var(--muted);"></span>
+      <span class="user-badge badge-master" style="font-size:10px;">MASTER</span>
+      <button class="menu-btn" onclick="abrirMenu()">☰</button>
+    </div>
+  </div>
+  <div class="main">
+    <div class="section">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+        <div class="section-title" style="margin-bottom:0;">👥 Usuários</div>
+        <button class="btn btn-primary" onclick="abrirModalNovoUsuario()" style="width:auto;padding:8px 16px;font-size:13px;">+ Novo</button>
+      </div>
+      <div id="lista-usuarios"></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL NOVO/EDITAR USUARIO -->
+<div class="modal-overlay" id="modal-usuario">
+  <div class="modal-inner">
+    <div class="modal-title" id="modal-usr-titulo">Novo Usuário</div>
+    <input type="hidden" id="usr-id">
+    <div class="field-group">
+      <label class="field-label">Nome *</label>
+      <input type="text" id="usr-nome" placeholder="Nome completo">
+    </div>
+    <div class="field-group">
+      <label class="field-label">E-mail *</label>
+      <input type="email" id="usr-email" placeholder="email@exemplo.com">
+    </div>
+    <div class="field-group">
+      <label class="field-label">Senha *</label>
+      <input type="password" id="usr-senha" placeholder="••••••••">
+    </div>
+    <div class="field-group">
+      <label class="field-label">Perfil *</label>
+      <select id="usr-perfil">
+        <option value="usuario">Usuário</option>
+        <option value="supervisor">Supervisor</option>
+        <option value="master">Master</option>
+      </select>
+    </div>
+    <div id="usr-erro" style="color:var(--red);font-size:12px;margin-bottom:10px;display:none;"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px;">
+      <button class="btn btn-secondary" onclick="fecharModalUsuario()">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarUsuario()">Salvar</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL FOTO -->
 <div class="foto-modal" id="foto-modal">
   <div class="foto-modal-inner">
@@ -599,6 +694,7 @@ let historico = [];
       document.getElementById('hdr-nome').textContent = usuario.nome;
       const b = document.getElementById('hdr-badge');
       b.textContent = usuario.perfil; b.className = 'user-badge badge-' + usuario.perfil;
+      if (usuario.perfil === 'master') document.getElementById('menu-usuarios').style.display = 'flex';
     } catch(e) { sessionStorage.removeItem('mixsul_user'); }
   }
 })();
@@ -632,6 +728,7 @@ async function fazerLogin() {
       document.getElementById('hdr-nome').textContent = data.nome;
       const b = document.getElementById('hdr-badge');
       b.textContent = data.perfil; b.className = `user-badge badge-${data.perfil}`;
+      if (data.perfil === 'master') document.getElementById('menu-usuarios').style.display = 'flex';
     } else {
       erro.textContent = 'E-mail ou senha incorretos.'; erro.style.display = 'block';
     }
@@ -815,7 +912,7 @@ async function autorizarMargem() {
     const res = await fetch(`${SUPA_URL}/rest/v1/rpc/autorizar_margem`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}` },
-      body: JSON.stringify({ p_email: email, p_senha: senha })
+      body: JSON.stringify({ p_email: email, p_senha: senha, p_solicitante_email: usuario.email })
     });
     const data = await res.json();
 
@@ -828,7 +925,7 @@ async function autorizarMargem() {
     } else {
       supAutorizado = false;
       status.style.color = 'var(--red)';
-      status.textContent = '✕ Credenciais inválidas ou sem permissão.';
+      status.textContent = data.motivo ? `✕ ${data.motivo}` : '✕ Credenciais inválidas ou sem permissão.';
     }
   } catch(e) { status.style.color = 'var(--red)'; status.textContent = 'Erro de conexão.'; }
 }
@@ -934,6 +1031,139 @@ function limparForm() {
   document.getElementById('margem-num').textContent = '—';
   document.getElementById('margem-tag').textContent = 'Aguardando';
   document.getElementById('btn-cad').disabled = true;
+}
+
+// MENU
+function abrirMenu() {
+  document.getElementById('menu-overlay').classList.add('show');
+  document.getElementById('menu-drawer').classList.add('show');
+}
+function fecharMenu() {
+  document.getElementById('menu-overlay').classList.remove('show');
+  document.getElementById('menu-drawer').classList.remove('show');
+}
+function irParaCadastro() {
+  document.getElementById('tela-principal').style.display = 'block';
+  document.getElementById('tela-usuarios').style.display = 'none';
+  document.querySelectorAll('.menu-item').forEach(i => i.classList.remove('active'));
+  document.querySelectorAll('.menu-item')[0].classList.add('active');
+  fecharMenu();
+}
+function irParaUsuarios() {
+  document.getElementById('tela-principal').style.display = 'none';
+  document.getElementById('tela-usuarios').style.display = 'block';
+  document.querySelectorAll('.menu-item').forEach(i => i.classList.remove('active'));
+  document.getElementById('menu-usuarios').classList.add('active');
+  fecharMenu();
+  carregarUsuarios();
+}
+
+// GESTÃO DE USUÁRIOS
+const PERFIL_COR = { master: '#a855f7', supervisor: '#D90704', usuario: '#666' };
+const PERFIL_LABEL = { master: 'MASTER', supervisor: 'SUPERVISOR', usuario: 'USUÁRIO' };
+
+async function carregarUsuarios() {
+  const lista = document.getElementById('lista-usuarios');
+  lista.innerHTML = '<div style="color:var(--muted);font-size:13px;">Carregando...</div>';
+  try {
+    const res = await fetch(`${SUPA_URL}/rest/v1/usuarios?select=id,nome,email,perfil,ativo&order=nome`, {
+      headers: { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}` }
+    });
+    const data = await res.json();
+    if (!data.length) { lista.innerHTML = '<div style="color:var(--muted);font-size:13px;">Nenhum usuário cadastrado.</div>'; return; }
+    lista.innerHTML = data.map(u => `
+      <div class="usr-card">
+        <div>
+          <div class="usr-nome">${u.nome}</div>
+          <div class="usr-email">${u.email}</div>
+          <span class="perfil-badge" style="color:${PERFIL_COR[u.perfil]};border-color:${PERFIL_COR[u.perfil]}">${PERFIL_LABEL[u.perfil]}</span>
+          ${!u.ativo ? '<span style="font-size:10px;color:var(--red);margin-left:6px;">INATIVO</span>' : ''}
+        </div>
+        <div class="usr-actions">
+          <button class="btn-icon" onclick="editarUsuario('${u.id}','${u.nome}','${u.email}','${u.perfil}')">✏️</button>
+          ${u.email !== usuario.email ? `<button class="btn-icon danger" onclick="toggleUsuario('${u.id}',${u.ativo})">${u.ativo ? '🚫' : '✓'}</button>` : ''}
+        </div>
+      </div>`).join('');
+  } catch(e) { lista.innerHTML = '<div style="color:var(--red);font-size:13px;">Erro ao carregar usuários.</div>'; }
+}
+
+function abrirModalNovoUsuario() {
+  document.getElementById('usr-id').value = '';
+  document.getElementById('usr-nome').value = '';
+  document.getElementById('usr-email').value = '';
+  document.getElementById('usr-senha').value = '';
+  document.getElementById('usr-perfil').value = 'usuario';
+  document.getElementById('usr-erro').style.display = 'none';
+  document.getElementById('modal-usr-titulo').textContent = 'Novo Usuário';
+  document.getElementById('usr-senha').placeholder = '••••••••';
+  document.getElementById('modal-usuario').classList.add('show');
+}
+
+function editarUsuario(id, nome, email, perfil) {
+  document.getElementById('usr-id').value = id;
+  document.getElementById('usr-nome').value = nome;
+  document.getElementById('usr-email').value = email;
+  document.getElementById('usr-senha').value = '';
+  document.getElementById('usr-perfil').value = perfil;
+  document.getElementById('usr-erro').style.display = 'none';
+  document.getElementById('modal-usr-titulo').textContent = 'Editar Usuário';
+  document.getElementById('usr-senha').placeholder = 'Deixe em branco para manter';
+  document.getElementById('modal-usuario').classList.add('show');
+}
+
+function fecharModalUsuario() {
+  document.getElementById('modal-usuario').classList.remove('show');
+}
+
+async function salvarUsuario() {
+  const id = document.getElementById('usr-id').value;
+  const nome = document.getElementById('usr-nome').value.trim();
+  const email = document.getElementById('usr-email').value.trim();
+  const senha = document.getElementById('usr-senha').value;
+  const perfil = document.getElementById('usr-perfil').value;
+  const erro = document.getElementById('usr-erro');
+
+  if (!nome || !email || (!id && !senha)) {
+    erro.textContent = 'Preencha todos os campos obrigatórios.';
+    erro.style.display = 'block'; return;
+  }
+
+  erro.style.display = 'none';
+
+  try {
+    if (id) {
+      // Editar via RPC
+      const body = { p_id: id, p_nome: nome, p_email: email, p_perfil: perfil };
+      if (senha) body.p_senha = senha;
+      const res = await fetch(`${SUPA_URL}/rest/v1/rpc/atualizar_usuario`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}` },
+        body: JSON.stringify(body)
+      });
+    } else {
+      // Inserir via RPC
+      const res = await fetch(`${SUPA_URL}/rest/v1/rpc/criar_usuario`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}` },
+        body: JSON.stringify({ p_nome: nome, p_email: email, p_senha: senha, p_perfil: perfil })
+      });
+    }
+    fecharModalUsuario();
+    showToast(id ? 'Usuário atualizado!' : 'Usuário criado!', 'success');
+    carregarUsuarios();
+  } catch(e) { erro.textContent = 'Erro de conexão.'; erro.style.display = 'block'; }
+}
+
+async function toggleUsuario(id, ativo) {
+  try {
+    await fetch(`${SUPA_URL}/rest/v1/usuarios?id=eq.${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}`, 'Prefer': 'return=minimal' },
+      body: JSON.stringify({ ativo: !ativo })
+    });
+    showToast(ativo ? 'Usuário desativado' : 'Usuário ativado', 'success');
+    carregarUsuarios();
+  } catch(e) { showToast('Erro ao atualizar', 'error'); }
 }
 
 // TOAST
