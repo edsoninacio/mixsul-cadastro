@@ -914,7 +914,8 @@ async function autorizarMargem() {
       headers: { 'Content-Type': 'application/json', 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}` },
       body: JSON.stringify({ p_email: email, p_senha: senha, p_solicitante_email: usuario.email })
     });
-    const data = await res.json();
+    const raw = await res.json();
+    const data = Array.isArray(raw) ? raw[0] : raw;
 
     if (data && data.autorizado) {
       supAutorizado = true;
@@ -925,9 +926,9 @@ async function autorizarMargem() {
     } else {
       supAutorizado = false;
       status.style.color = 'var(--red)';
-      status.textContent = data.motivo ? `✕ ${data.motivo}` : '✕ Credenciais inválidas ou sem permissão.';
+      status.textContent = data && data.motivo ? `✕ ${data.motivo}` : '✕ Credenciais inválidas ou sem permissão.';
     }
-  } catch(e) { status.style.color = 'var(--red)'; status.textContent = 'Erro de conexão.'; }
+  } catch(e) { status.style.color = 'var(--red)'; status.textContent = 'Erro de conexão: ' + e.message; }
 }
 
 // VERIFICAR BOTÃO
