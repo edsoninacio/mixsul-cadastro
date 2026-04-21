@@ -915,6 +915,7 @@ async function autorizarMargem() {
       body: JSON.stringify({ p_email: email, p_senha: senha, p_solicitante_email: usuario.email })
     });
     const raw = await res.json();
+    console.log('AUTORIZAR STATUS:', res.status, 'RAW:', JSON.stringify(raw));
     const data = Array.isArray(raw) ? raw[0] : raw;
 
     if (data && data.autorizado) {
