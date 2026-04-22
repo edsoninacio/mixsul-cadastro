@@ -1189,15 +1189,22 @@ async function carregarUsuarios() {
       body: JSON.stringify({})
     });
     const raw = await res.json();
-    // listar_usuarios retorna JSON string dentro de array
+    // listar_usuarios retorna json - Supabase REST encapsula em array
     let data = [];
-    if (Array.isArray(raw)) {
-      data = raw;
-    } else if (typeof raw === 'string') {
-      try { data = JSON.parse(raw); } catch(e) { data = []; }
-    } else if (raw && typeof raw === 'object') {
-      data = [raw];
-    }
+    try {
+      if (Array.isArray(raw) && raw.length > 0) {
+        const first = raw[0];
+        if (typeof first === 'string') {
+          data = JSON.parse(first);
+        } else if (Array.isArray(first)) {
+          data = first;
+        } else {
+          data = raw;
+        }
+      } else if (typeof raw === 'string') {
+        data = JSON.parse(raw);
+      }
+    } catch(e) { data = []; }
     if (!data.length) { lista.innerHTML = '<div style="color:var(--muted);font-size:13px;">Nenhum usuário cadastrado.</div>'; return; }
     lista.innerHTML = data.map(u => `
       <div class="usr-card">
