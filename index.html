@@ -444,6 +444,7 @@
     <button class="menu-item active" onclick="irParaCadastro()">📦 Cadastro de Produto</button>
     <button class="menu-item" id="menu-usuarios" onclick="irParaUsuarios()" style="display:none;">👥 Gestão de Usuários</button>
     <div style="flex:1;"></div>
+    <button class="menu-item" onclick="abrirModalTrocarSenha()">🔑 Trocar Senha</button>
     <button class="menu-item danger" onclick="fazerLogout()">⏻ Sair</button>
   </div>
 
@@ -515,12 +516,12 @@
           <input type="number" id="f-qtd" min="1" value="1" oninput="calcCusto()">
         </div>
         <div class="field-group">
-          <label class="field-label">Custo Total (R$) *</label>
-          <input type="number" id="f-custo-lote" placeholder="0.00" step="0.01" readonly style="border-color:#333;color:var(--muted);cursor:default;">
-        </div>
-        <div class="field-group">
           <label class="field-label">Custo Unit. (R$)</label>
           <input type="number" id="f-custo-unit" placeholder="0.00" step="0.01" oninput="calcCusto()">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Custo Total (R$) *</label>
+          <input type="number" id="f-custo-lote" placeholder="0.00" step="0.01" readonly style="border-color:#333;color:var(--muted);cursor:default;">
         </div>
         <div class="field-group">
           <label class="field-label">Preço Venda (R$) *</label>
@@ -528,7 +529,7 @@
         </div>
         <div class="field-group">
           <label class="field-label">Qtd Etiquetas</label>
-          <input type="number" id="f-etq" min="1" value="1">
+          <input type="number" id="f-etq" min="0" value="0">
         </div>
       </div>
     </div>
@@ -642,6 +643,31 @@
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px;">
       <button class="btn btn-secondary" onclick="fecharModalUsuario()">Cancelar</button>
       <button class="btn btn-primary" onclick="salvarUsuario()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL TROCAR SENHA -->
+<div class="modal-overlay" id="modal-senha">
+  <div class="modal-inner">
+    <div class="modal-title">🔑 Trocar Senha</div>
+    <div class="field-group">
+      <label class="field-label">Senha Atual *</label>
+      <input type="password" id="senha-atual" placeholder="••••••••">
+    </div>
+    <div class="field-group">
+      <label class="field-label">Nova Senha *</label>
+      <input type="password" id="senha-nova" placeholder="••••••••">
+    </div>
+    <div class="field-group">
+      <label class="field-label">Confirmar Nova Senha *</label>
+      <input type="password" id="senha-confirma" placeholder="••••••••">
+    </div>
+    <div id="senha-erro" style="color:var(--red);font-size:12px;margin-bottom:10px;display:none;"></div>
+    <div id="senha-ok" style="color:var(--green);font-size:12px;margin-bottom:10px;display:none;"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px;">
+      <button class="btn btn-secondary" onclick="fecharModalSenha()">Cancelar</button>
+      <button class="btn btn-primary" onclick="trocarSenha()">Salvar</button>
     </div>
   </div>
 </div>
@@ -1046,6 +1072,79 @@ function limparForm() {
   document.getElementById('margem-num').textContent = '—';
   document.getElementById('margem-tag').textContent = 'Aguardando';
   document.getElementById('btn-cad').disabled = true;
+}
+
+// TROCAR SENHA
+function abrirModalTrocarSenha() {
+  document.getElementById('senha-atual').value = '';
+  document.getElementById('senha-nova').value = '';
+  document.getElementById('senha-confirma').value = '';
+  document.getElementById('senha-erro').style.display = 'none';
+  document.getElementById('senha-ok').style.display = 'none';
+  document.getElementById('modal-senha').classList.add('show');
+  fecharMenu();
+}
+
+function fecharModalSenha() {
+  document.getElementById('modal-senha').classList.remove('show');
+}
+
+async function trocarSenha() {
+  const atual = document.getElementById('senha-atual').value;
+  const nova = document.getElementById('senha-nova').value;
+  const confirma = document.getElementById('senha-confirma').value;
+  const erro = document.getElementById('senha-erro');
+  const ok = document.getElementById('senha-ok');
+
+  erro.style.display = 'none';
+  ok.style.display = 'none';
+
+  if (!atual || !nova || !confirma) {
+    erro.textContent = 'Preencha todos os campos.';
+    erro.style.display = 'block'; return;
+  }
+  if (nova !== confirma) {
+    erro.textContent = 'Nova senha e confirmação não coincidem.';
+    erro.style.display = 'block'; return;
+  }
+  if (nova.length < 6) {
+    erro.textContent = 'A nova senha deve ter pelo menos 6 caracteres.';
+    erro.style.display = 'block'; return;
+  }
+
+  try {
+    // Verificar senha atual
+    const resVerif = await fetch(`${SUPA_URL}/rest/v1/rpc/login_usuario`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}` },
+      body: JSON.stringify({ p_email: usuario.email, p_senha: atual })
+    });
+    const dataVerif = await resVerif.json();
+    if (!dataVerif || !dataVerif.autorizado) {
+      erro.textContent = 'Senha atual incorreta.';
+      erro.style.display = 'block'; return;
+    }
+
+    // Atualizar senha
+    const res = await fetch(`${SUPA_URL}/rest/v1/rpc/atualizar_usuario`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}` },
+      body: JSON.stringify({
+        p_id: usuario.id,
+        p_nome: usuario.nome,
+        p_email: usuario.email,
+        p_perfil: usuario.perfil,
+        p_senha: nova
+      })
+    });
+    const data = await res.json();
+    ok.textContent = '✓ Senha alterada com sucesso!';
+    ok.style.display = 'block';
+    setTimeout(() => fecharModalSenha(), 1500);
+  } catch(e) {
+    erro.textContent = 'Erro de conexão.';
+    erro.style.display = 'block';
+  }
 }
 
 // MENU
