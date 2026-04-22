@@ -1189,7 +1189,15 @@ async function carregarUsuarios() {
       body: JSON.stringify({})
     });
     const raw = await res.json();
-    const data = Array.isArray(raw) ? raw : (raw || []);
+    // listar_usuarios retorna JSON string dentro de array
+    let data = [];
+    if (Array.isArray(raw)) {
+      data = raw;
+    } else if (typeof raw === 'string') {
+      try { data = JSON.parse(raw); } catch(e) { data = []; }
+    } else if (raw && typeof raw === 'object') {
+      data = [raw];
+    }
     if (!data.length) { lista.innerHTML = '<div style="color:var(--muted);font-size:13px;">Nenhum usuário cadastrado.</div>'; return; }
     lista.innerHTML = data.map(u => `
       <div class="usr-card">
