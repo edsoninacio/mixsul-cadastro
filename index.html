@@ -909,16 +909,29 @@ async function autorizarMargem() {
   status.style.color = 'var(--muted)'; status.textContent = 'Verificando...';
 
   try {
-    const res = await fetch(`${SUPA_URL}/rest/v1/rpc/autorizar_margem`, {
+    const res = await fetch(`${SUPA_URL}/rest/v1/rpc/autorizar_margem2`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}` },
-      body: JSON.stringify({ p_email: email, p_senha: senha, p_solicitante_email: usuario.email })
+      body: JSON.stringify({ p_email: email, p_senha: senha })
     });
     const raw = await res.json();
-    console.log('AUTORIZAR STATUS:', res.status, 'RAW:', JSON.stringify(raw));
     const data = Array.isArray(raw) ? raw[0] : raw;
 
     if (data && data.autorizado) {
+      // Supervisor não pode aprovar a si mesmo
+      if (data.perfil === 'supervisor' && email === usuario.email) {
+        supAutorizado = false;
+        status.style.color = 'var(--red)';
+        status.textContent = '✕ Supervisor não pode autorizar a própria exceção';
+        return;
+      }
+      // usuario comum não pode aprovar
+      if (data.perfil === 'usuario') {
+        supAutorizado = false;
+        status.style.color = 'var(--red)';
+        status.textContent = '✕ Perfil sem permissão para autorizar';
+        return;
+      }
       supAutorizado = true;
       status.style.color = 'var(--green)';
       status.textContent = `✓ Autorizado por ${data.supervisor_nome}`;
