@@ -1059,10 +1059,8 @@ async function cadastrar() {
 }
 
 function limparForm() {
-  const ultimoCusto = document.getElementById('f-custo-unit').value;
   codigoAtual = null; tipoAtual = null; supAutorizado = false; margemAtual = 0; precoSug = null;
   ['f-nome','f-marca','f-custo-lote','f-custo-unit','f-preco','f-cod-manual'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
-  document.getElementById('f-custo-unit').value = ultimoCusto;
   document.getElementById('f-cat').value = '';
   document.getElementById('f-lote').value = '';
   document.getElementById('f-qtd').value = '1';
@@ -1185,10 +1183,13 @@ async function carregarUsuarios() {
   const lista = document.getElementById('lista-usuarios');
   lista.innerHTML = '<div style="color:var(--muted);font-size:13px;">Carregando...</div>';
   try {
-    const res = await fetch(`${SUPA_URL}/rest/v1/usuarios?select=id,nome,email,perfil,ativo&order=nome`, {
-      headers: { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}` }
+    const res = await fetch(`${SUPA_URL}/rest/v1/rpc/listar_usuarios`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}` },
+      body: JSON.stringify({})
     });
-    const data = await res.json();
+    const raw = await res.json();
+    const data = Array.isArray(raw) ? raw : (raw || []);
     if (!data.length) { lista.innerHTML = '<div style="color:var(--muted);font-size:13px;">Nenhum usuário cadastrado.</div>'; return; }
     lista.innerHTML = data.map(u => `
       <div class="usr-card">
@@ -1275,10 +1276,10 @@ async function salvarUsuario() {
 
 async function toggleUsuario(id, ativo) {
   try {
-    await fetch(`${SUPA_URL}/rest/v1/usuarios?id=eq.${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}`, 'Prefer': 'return=minimal' },
-      body: JSON.stringify({ ativo: !ativo })
+    const res = await fetch(`${SUPA_URL}/rest/v1/rpc/toggle_usuario_ativo`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}` },
+      body: JSON.stringify({ p_id: id, p_ativo: !ativo })
     });
     showToast(ativo ? 'Usuário desativado' : 'Usuário ativado', 'success');
     carregarUsuarios();
