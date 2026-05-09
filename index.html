@@ -706,6 +706,7 @@ const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsI
 const WF2 = 'https://edson1977.app.n8n.cloud/webhook/mixsul-precificacao';
 const WF3 = 'https://edson1977.app.n8n.cloud/webhook/mixsul-cadastro';
 const WF4 = 'https://edson1977.app.n8n.cloud/webhook/mixsul-foto';
+const ZEBRA_AGENT = 'http://192.168.15.10:5000';
 
 let usuario = null, codigoAtual = null, tipoAtual = null;
 let scannerAtivo = false, html5QrCode = null;
@@ -1038,6 +1039,24 @@ async function cadastrar() {
 
     if (data && data.sucesso) {
       showToast(`✓ ${data.codigo} cadastrado com sucesso!`, 'success');
+
+      // Imprimir etiquetas se qtd > 0 e ZPL disponível
+      const qtdEtq = parseInt(document.getElementById('f-etq').value) || 0;
+      if (qtdEtq > 0 && data.zpl) {
+        try {
+          for (let i = 0; i < qtdEtq; i++) {
+            await fetch(`${ZEBRA_AGENT}/imprimir`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ zpl: data.zpl })
+            });
+          }
+          showToast(`🖨️ ${qtdEtq} etiqueta(s) impressa(s)!`, 'success');
+        } catch(e) {
+          showToast('Cadastrado! Erro ao imprimir etiqueta.', 'error');
+        }
+      }
+
       historico.unshift(data);
       document.getElementById('sec-hist').style.display = 'block';
       document.getElementById('hist-lista').innerHTML = historico.slice(0, 10).map(h =>
@@ -1183,26 +1202,10 @@ async function carregarUsuarios() {
   const lista = document.getElementById('lista-usuarios');
   lista.innerHTML = '<div style="color:var(--muted);font-size:13px;">Carregando...</div>';
   try {
-    const res = await fetch(`${SUPA_URL}/rest/v1/rpc/listar_usuarios`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}` },
-      body: JSON.stringify({})
+    const res = await fetch(`${SUPA_URL}/rest/v1/usuarios?select=id,nome,email,perfil,ativo&order=nome`, {
+      headers: { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}` }
     });
-    const raw = await res.json();
-    // jsonb retorna direto como array ou dentro de array
-    let data = [];
-    try {
-      if (Array.isArray(raw)) {
-        // pode ser [{...},{...}] direto ou [[ {...},{...} ]]
-        if (raw.length > 0 && Array.isArray(raw[0])) {
-          data = raw[0];
-        } else {
-          data = raw;
-        }
-      } else if (raw && typeof raw === 'object') {
-        data = [raw];
-      }
-    } catch(e) { data = []; }
+    const data = await res.json();
     if (!data.length) { lista.innerHTML = '<div style="color:var(--muted);font-size:13px;">Nenhum usuário cadastrado.</div>'; return; }
     lista.innerHTML = data.map(u => `
       <div class="usr-card">
@@ -1289,10 +1292,10 @@ async function salvarUsuario() {
 
 async function toggleUsuario(id, ativo) {
   try {
-    const res = await fetch(`${SUPA_URL}/rest/v1/rpc/toggle_usuario_ativo`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}` },
-      body: JSON.stringify({ p_id: id, p_ativo: !ativo })
+    await fetch(`${SUPA_URL}/rest/v1/usuarios?id=eq.${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}`, 'Prefer': 'return=minimal' },
+      body: JSON.stringify({ ativo: !ativo })
     });
     showToast(ativo ? 'Usuário desativado' : 'Usuário ativado', 'success');
     carregarUsuarios();
