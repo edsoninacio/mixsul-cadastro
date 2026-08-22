@@ -494,30 +494,15 @@
           <select id="f-cat">
             <option value="">Selecione...</option>
             <option value="Alimentos">Alimentos</option>
-            <option value="Artesanato">Artesanato</option>
             <option value="Bebidas">Bebidas</option>
-            <option value="Bijuteria">Bijuteria</option>
             <option value="Brinquedos">Brinquedos</option>
             <option value="Calçados">Calçados</option>
-            <option value="Cama, mesa e banho">Cama, mesa e banho</option>
             <option value="Celular">Celular</option>
-            <option value="China">China</option>
-            <option value="Cosmético">Coméstico</option>
             <option value="Eletroeletrônicos">Eletroeletrônicos</option>
             <option value="Ferramentas">Ferramentas</option>
-            <option value="Fitness">Fitness</option>
-            <option value="Informática">Informática</option>
             <option value="Linha Branca">Linha Branca</option>
-            <option value="Livros">Livros</option>
-            <option value="Material Escolar">Material Escolar</option>
             <option value="Móveis">Móveis</option>
-            <option value="Organização">Organização</option>
-            <option value="Papelaria">Papelaria</option>
-            <option value="Pets">Pets</option>
-            <option value="Pets_pet">Pets_pet</option>
-            <option value="Relógio">Relógio</option>
-            <option value="Sorvetes">Sorvetes</option>
-            <option value="Suplementos">Suplementos</option>
+            <option value="Pet">Pet</option>
             <option value="Utensílios Domésticos">Utensílios Domésticos</option>
             <option value="Vestuário">Vestuário</option>
           </select>
@@ -721,6 +706,7 @@ const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsI
 const WF2 = 'https://edson1977.app.n8n.cloud/webhook/mixsul-precificacao';
 const WF3 = 'https://edson1977.app.n8n.cloud/webhook/mixsul-cadastro';
 const WF4 = 'https://edson1977.app.n8n.cloud/webhook/mixsul-foto';
+const ZEBRA_AGENT = 'http://192.168.15.16:5000';
 
 let usuario = null, codigoAtual = null, tipoAtual = null;
 let scannerAtivo = false, html5QrCode = null;
@@ -1053,6 +1039,24 @@ async function cadastrar() {
 
     if (data && data.sucesso) {
       showToast(`✓ ${data.codigo} cadastrado com sucesso!`, 'success');
+
+      // Imprimir etiquetas se qtd > 0 e ZPL disponível
+      const qtdEtq = parseInt(document.getElementById('f-etq').value) || 0;
+      if (qtdEtq > 0 && data.zpl) {
+        try {
+          for (let i = 0; i < qtdEtq; i++) {
+            await fetch(`${ZEBRA_AGENT}/imprimir`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ zpl: data.zpl })
+            });
+          }
+          showToast(`🖨️ ${qtdEtq} etiqueta(s) impressa(s)!`, 'success');
+        } catch(e) {
+          showToast('Cadastrado! Erro ao imprimir etiqueta.', 'error');
+        }
+      }
+
       historico.unshift(data);
       document.getElementById('sec-hist').style.display = 'block';
       document.getElementById('hist-lista').innerHTML = historico.slice(0, 10).map(h =>
